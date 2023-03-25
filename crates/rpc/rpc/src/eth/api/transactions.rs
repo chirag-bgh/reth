@@ -3,6 +3,7 @@ use crate::{
     eth::{
         error::{EthApiError, EthResult, SignError},
         utils::recover_raw_transaction,
+        BYZANTIUM_FORK_BLKNUM,
     },
     EthApi,
 };
@@ -309,6 +310,12 @@ where
                 res_receipt.to = Some(*addr);
             }
         }
+
+        res_receipt.state_root = if receipt.success && meta.block_number >= BYZANTIUM_FORK_BLKNUM {
+            Some(H256::from_low_u64_be(1))
+        } else {
+            Some(H256::from_low_u64_be(0))
+        };
 
         match tx.transaction {
             PrimitiveTransaction::Legacy(TxLegacy { gas_limit, gas_price, .. }) => {
