@@ -13,6 +13,7 @@ Merkle trie implementation
 # reth
 reth-primitives = { path  = "../primitives" }
 reth-rlp = { path = "../rlp" }
+bytes = "1.1.0"
 
 # tokio
 tokio = { version = "1.21.2", default-features = false, features = ["sync"] }

@@ -1,3 +1,4 @@
+use bytes::{Bytes, BytesMut};
 use derive_more::{Deref, DerefMut, From, Index};
 use reth_rlp::RlpEncodableWrapper;
 
@@ -27,7 +28,7 @@ use reth_rlp::RlpEncodableWrapper;
 )]
 pub struct Nibbles {
     /// The inner representation of the nibble sequence.
-    pub hex_data: Vec<u8>,
+    pub hex_data: Bytes,
 }
 
 impl From<&[u8]> for Nibbles {
@@ -51,7 +52,7 @@ impl std::fmt::Debug for Nibbles {
 impl Nibbles {
     /// Creates a new [Nibbles] instance from bytes.
     pub fn from_hex(hex: Vec<u8>) -> Self {
-        Nibbles { hex_data: hex }
+        Nibbles { hex_data: hex.into() }
     }
 
     /// Take a byte array (slice or vector) as input and convert it into a [Nibbles] struct
@@ -151,13 +152,13 @@ impl Nibbles {
 
     /// Increments the nibble sequence by one.
     pub fn increment(&self) -> Option<Nibbles> {
-        let mut incremented = self.hex_data.clone();
+        let mut incremented = BytesMut::from(&self.hex_data[..]);
 
         for nibble in incremented.iter_mut().rev() {
             assert!(*nibble < 0x10);
             if *nibble < 0xf {
                 *nibble += 1;
-                return Some(Nibbles::from(incremented))
+                return Some(Nibbles { hex_data: incremented.freeze() })
             } else {
                 *nibble = 0;
             }
@@ -218,7 +219,10 @@ impl Nibbles {
 
     /// Extend the current nibbles with another nibbles.
     pub fn extend(&mut self, b: &Nibbles) {
-        self.hex_data.extend_from_slice(b);
+        let mut extended_hex_data = BytesMut::with_capacity(self.len() + b.len());
+        extended_hex_data.extend_from_slice(self);
+        extended_hex_data.extend_from_slice(b);
+        extended_hex_data.freeze();
     }
 
     /// Truncate the current nibbles to the given length.
@@ -235,7 +239,7 @@ mod tests {
     #[test]
     fn hashed_regression() {
         let nibbles = hex::decode("05010406040a040203030f010805020b050c04070003070e0909070f010b0a0805020301070c0a0902040b0f000f0006040a04050f020b090701000a0a040b").unwrap();
-        let nibbles = Nibbles::from(nibbles);
+        let nibbles = Nibbles::from(Bytes::from(nibbles));
         let path = nibbles.encode_path_leaf(true);
         let expected =
             hex::decode("351464a4233f1852b5c47037e997f1ba852317ca924bf0f064a45f2b9710aa4b")
@@ -253,7 +257,7 @@ mod tests {
             (vec![0xa, 0xb, 0x2, 0x0], vec![0xab, 0x20]),
             (vec![0xa, 0xb, 0x2, 0x7], vec![0xab, 0x27]),
         ] {
-            let nibbles = Nibbles::from(input);
+            let nibbles = Nibbles::from(Bytes::from(input));
             let encoded = nibbles.pack();
             assert_eq!(encoded, expected);
         }
