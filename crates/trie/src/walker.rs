@@ -94,7 +94,7 @@ impl<'a, K: Key + From<Vec<u8>>, C: TrieCursor<K>> TrieWalker<'a, K, C> {
             assert!(!node.state_mask.is_empty());
         }
 
-        Ok(entry.map(|(k, v)| (Nibbles::from(k), v)))
+        Ok(entry.map(|(k, v)| (Nibbles::from(k.into()), v)))
     }
 
     /// Consumes the next node in the trie, updating the stack.

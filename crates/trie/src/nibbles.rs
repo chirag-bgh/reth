@@ -218,10 +218,10 @@ impl Nibbles {
     }
 
     /// Extend the current nibbles with another nibbles.
-    pub fn extend(&mut self, b: &Nibbles) {
-        let mut extended_hex_data = BytesMut::with_capacity(self.len() + b.len());
+    pub fn extend(&mut self, b: impl AsRef<[u8]>)  {
+        let mut extended_hex_data = BytesMut::with_capacity(self.len() + b.as_ref().len());
         extended_hex_data.extend_from_slice(self);
-        extended_hex_data.extend_from_slice(b);
+        extended_hex_data.extend_from_slice(b.as_ref());
         extended_hex_data.freeze();
     }
 
